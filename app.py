@@ -18,10 +18,10 @@ def generate_data():
     n_samples = 300
     n_features = 2
     n_clusters = int(request.json['n_clusters'])
-    data = np.random.randn(n_samples, n_features) * 0.5
-    for i in range(n_clusters):
-        center = np.random.randn(n_features) * 4
-        data[i*(n_samples//n_clusters):(i+1)*(n_samples//n_clusters)] += center
+    
+    
+    data = np.random.uniform(-10, 10, (n_samples, n_features))
+    
     return jsonify({'data': data.tolist()})
 
 @app.route('/initialize', methods=['POST'])
@@ -29,7 +29,7 @@ def initialize():
     global kmeans_state
     method = request.json['method']
     n_clusters = int(request.json['n_clusters'])
-    kmeans = KMeans(n_clusters=n_clusters)
+    kmeans = KMeans(n_clusters=n_clusters)  # Use the n_clusters from the request
     if method == 'manual':
         kmeans.centroids = np.array(request.json['centroids'])
     else:
