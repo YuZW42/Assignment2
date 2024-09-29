@@ -18,19 +18,29 @@ const y = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
 function updatePlot(points, centroids, labels) {
-    x.domain(d3.extent(points, d => d[0])).nice();
-    y.domain(d3.extent(points, d => d[1])).nice();
+    const xExtent = d3.extent(points, d => d[0]);
+    const yExtent = d3.extent(points, d => d[1]);
+    const maxExtent = Math.max(
+        Math.abs(xExtent[0]), Math.abs(xExtent[1]),
+        Math.abs(yExtent[0]), Math.abs(yExtent[1])
+    );
+    
+    x.domain([-maxExtent, maxExtent]).nice();
+    y.domain([-maxExtent, maxExtent]).nice();
 
     svg.selectAll("*").remove();
 
+    // Add x-axis
     svg.append("g")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .attr("transform", `translate(0,${y(0)})`)
         .call(d3.axisBottom(x));
 
+    // Add y-axis
     svg.append("g")
-        .attr("transform", `translate(${margin.left},0)`)
+        .attr("transform", `translate(${x(0)},0)`)
         .call(d3.axisLeft(y));
 
+    // Add data points
     svg.selectAll("circle.point")
         .data(points)
         .enter()
@@ -41,14 +51,14 @@ function updatePlot(points, centroids, labels) {
         .attr("r", 3)
         .attr("fill", (d, i) => labels ? colorScale(labels[i]) : "#3498db");
 
-    svg.selectAll("circle.centroid")
+    // Add centroids
+    svg.selectAll("path.centroid")
         .data(centroids)
         .enter()
-        .append("circle")
+        .append("path")
         .attr("class", "centroid")
-        .attr("cx", d => x(d[0]))
-        .attr("cy", d => y(d[1]))
-        .attr("r", 6)
+        .attr("d", d3.symbol().type(d3.symbolCross).size(100))
+        .attr("transform", d => `translate(${x(d[0])},${y(d[1])})`)
         .attr("fill", "red")
         .attr("stroke", "black");
 }
@@ -155,25 +165,24 @@ document.getElementById("reset").addEventListener("click", function() {
 });
 
 svg.on("click", function(event) {
-  const method = document.getElementById("init-method").value;
-  const numClusters = parseInt(document.getElementById("num-clusters").value);
-  
-  if (method === "manual") {
-      if (manualCentroids.length < numClusters) {
-          const [mouseX, mouseY] = d3.pointer(event);
-          const dataX = x.invert(mouseX);
-          const dataY = y.invert(mouseY);
-          manualCentroids.push([dataX, dataY]);
-          updatePlot(data, manualCentroids, []);
-          
-          if (manualCentroids.length === numClusters) {
-              console.log("All centroids placed. You can now step through or run to convergence.");
-          }
-      } else {
-          console.log("Maximum number of centroids reached. Use 'Reset Algorithm' to start over.");
-      }
-  }
+    const method = document.getElementById("init-method").value;
+    const numClusters = parseInt(document.getElementById("num-clusters").value);
+    
+    if (method === "manual") {
+        if (manualCentroids.length < numClusters) {
+            const [mouseX, mouseY] = d3.pointer(event);
+            const dataX = x.invert(mouseX);
+            const dataY = y.invert(mouseY);
+            manualCentroids.push([dataX, dataY]);
+            updatePlot(data, manualCentroids, []);
+            
+            if (manualCentroids.length === numClusters) {
+                console.log("All centroids placed. You can now step through or run to convergence.");
+            }
+        } else {
+            console.log("Maximum number of centroids reached. Use 'Reset Algorithm' to start over.");
+        }
+    }
 });
-
 
 generateData();
