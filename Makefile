@@ -4,5 +4,5 @@ install:
 run:
 	python3 app.py
 test:
-	pytest
+	python3 -m pytest
 	# do pip3 install --upgrade flask werkzeug if there are any errors related to that when 
